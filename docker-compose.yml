@@ -33,6 +33,11 @@ services:
       - ./frontend:/src
       - /src/node_modules
 
+  redis:
+    image: redis
+    networks:
+      - local
+
   backend:
     build: ${SRC_DIR:-.}/backend
     volumes:
@@ -41,11 +46,14 @@ services:
       - ${BASE_DIR:-./var}/static:/static
       - ${BASE_DIR:-./var}/media:/media
       - ${BASE_DIR:-./var}/logs:/logs
+      - ${BASE_DIR:-./var}/sessions:/sessions
     env_file:
       - .env
     networks:
       - backbone
       - local
+    ports:
+      - 8000:8000
 
   mail:
     image: mailhog/mailhog

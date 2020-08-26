@@ -1,1 +1,4 @@
 Django
+channels
+channels-redis
+python-reapy
