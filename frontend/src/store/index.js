@@ -1,5 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import session from './session'
+import webSocketPlugin from './ws'
+import auth from './auth'
 
 // import example from './module-example'
 
@@ -16,14 +19,34 @@ Vue.use(Vuex)
 
 export default function (/* { ssrContext } */) {
   const Store = new Vuex.Store({
+    state: {
+      connectionState: 'disconnected'
+    },
     modules: {
+      session,
+      auth
+    },
 
-      // example
+    actions: {
+      update_connection_state (context, connectionState) {
+        context.commit('UPDATE_CONNECTION_STATE', connectionState)
+      }
+    },
+
+    mutations: {
+      UPDATE_CONNECTION_STATE (state, connectionState) {
+        state.connectionState = connectionState
+      }
+    },
+
+    getters: {
+      connection_state: (state) => state.connectionState
     },
 
     // enable strict mode (adds overhead!)
     // for dev mode only
-    strict: process.env.DEV
+    strict: process.env.DEV,
+    plugins: [webSocketPlugin]
   })
 
   return Store

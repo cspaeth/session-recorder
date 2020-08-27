@@ -52,6 +52,7 @@ export default function webSocketPlugin (store) {
 
     console.log('connecting web socket')
     store.dispatch('update_connection_state', 'connecting')
+    // TODO Hardcoded URL
     store.$socket = new WebSocket('ws://localhost:8000/ws/remote/')
     store.$socket.onmessage = onMessage
     store.$socket.onopen = onOpen
