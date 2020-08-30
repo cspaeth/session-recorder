@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import session from './session'
 import webSocketPlugin from './ws'
 import auth from './auth'
+import recorder from './recorder'
 
 // import example from './module-example'
 
@@ -18,13 +19,14 @@ Vue.use(Vuex)
  */
 
 export default function (/* { ssrContext } */) {
-  const Store = new Vuex.Store({
+  return new Vuex.Store({
     state: {
       connectionState: 'disconnected'
     },
     modules: {
       session,
-      auth
+      auth,
+      recorder
     },
 
     actions: {
@@ -48,6 +50,4 @@ export default function (/* { ssrContext } */) {
     strict: process.env.DEV,
     plugins: [webSocketPlugin]
   })
-
-  return Store
 }

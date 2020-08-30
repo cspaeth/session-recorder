@@ -2,12 +2,12 @@
   <div id="q-app" >
 
     <Login v-if="current_user == null"></Login>
-    <StartSession v-else-if="recorder_state == 'ready'"></StartSession>
+    <StartSession v-else-if="recorder_state === 'connected'"></StartSession>
     <Session v-else></Session>
 
-    <q-inner-loading :showing="connection_state != 'connected'">
-      <q-spinner-gears size="50px" color="primary" v-if="connection_state == 'connecting'" />
-      <q-btn @click="$store.$socket.reconnect()" label="Erneut Verbinden" v-if="connection_state == 'disconnected'"></q-btn>
+    <q-inner-loading :showing="connection_state !== 'connected'">
+      <q-spinner-gears size="50px" color="primary" v-if="connection_state === 'connecting'"></q-spinner-gears>
+      <q-btn @click="$store.$socket.reconnect()" label="Erneut Verbinden" v-if="connection_state === 'disconnected'"></q-btn>
     </q-inner-loading>
 
   </div>
