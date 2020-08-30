@@ -29,6 +29,7 @@ ALLOWED_HOSTS = os.environ.get('DOMAINS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     'channels',
+    'ssr.apps.models',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
