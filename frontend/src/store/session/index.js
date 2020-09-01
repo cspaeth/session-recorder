@@ -1,13 +1,9 @@
 export default {
   state: () => {
     return {
-      name: null,
-      recorder: {
-        state: 'closed',
-        current_take: 0,
-        position: 0
-      },
+      name: '',
       takes: [],
+      active_take: 0,
       next_take: {
         number: 1,
         name: ''
@@ -17,15 +13,17 @@ export default {
 
   mutations: {
     SOCKET_UPDATE_FULL_SESSION (state, data) {
+      console.log(state)
       Object.assign(state, data)
+      console.log(state)
     }
   },
 
   actions: {
 
-    next_take_name (context, name) {
+    set_next_take_name (context, name) {
       this.$socket.send(JSON.stringify({
-        action: 'next_take_name',
+        action: 'set_next_take_name',
         data: name
       }))
     },
@@ -36,8 +34,11 @@ export default {
         data: name
       }))
     },
-    session_close (name) {
-
+    session_close () {
+      this.$socket.send(JSON.stringify({
+        action: 'session_close',
+        data: null
+      }))
     },
 
     logout () {
@@ -47,10 +48,13 @@ export default {
   },
 
   getters: {
-
     next_take: state => state.next_take,
     all_takes: state => state.takes,
-    session_name: state => state.name
+    session_name: state => state.name,
+    active_take (state) {
+      return state.takes.find(x => x.number === state.active_take)
+    },
+    active_take_number: state => state.active_take
 
   }
 }

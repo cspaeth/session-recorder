@@ -7,6 +7,7 @@ export default {
 
   mutations: {
     SOCKET_RECORDER_UPDATE (state, newState) {
+      console.log(newState)
       Object.assign(state, newState)
     }
   },
@@ -22,6 +23,18 @@ export default {
     take_stop () {
       this.$socket.send(JSON.stringify({
         action: 'take_stop',
+        data: null
+      }))
+    },
+    play () {
+      this.$socket.send(JSON.stringify({
+        action: 'play',
+        data: null
+      }))
+    },
+    stop () {
+      this.$socket.send(JSON.stringify({
+        action: 'stop',
         data: null
       }))
     },
@@ -54,10 +67,6 @@ export default {
 
   getters: {
     position_in_take: state => state.position || 0,
-    recorder_state: state => state.state,
-    active_take (state, getters) {
-      return getters.all_takes.find(x => x.number === state.current_take)
-    },
-    active_take_number: state => state.current_take
+    recorder_state: state => state.state
   }
 }

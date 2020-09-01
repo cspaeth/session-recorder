@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import CASCADE
+from django.db.models import CASCADE, SET_NULL
 
 
 class Session(models.Model):
@@ -9,6 +9,7 @@ class Session(models.Model):
     next_take_number = models.IntegerField(default=1)
     next_take_name = models.CharField(default="", max_length=255)
     project_file = models.CharField(null=True, max_length=1024)
+    active_take = models.ForeignKey('Take', related_name='+', null=True, on_delete=SET_NULL)
 
     def to_dict(self):
         result = {
@@ -17,7 +18,8 @@ class Session(models.Model):
                 'number': self.next_take_number,
                 'name': self.next_take_name,
             },
-            'takes': []
+            'takes': [],
+            'active_take': self.active_take and self.active_take.number or None
         }
 
         for take in self.takes.all():

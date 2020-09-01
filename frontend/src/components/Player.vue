@@ -4,13 +4,13 @@
            round
            color="black"
            icon="play"
-           @click="$store.dispatch('take_play', nexttake)"
+           @click="$store.dispatch('play', nexttake)"
            v-if="recorder_state === 'ready'"></q-btn>
    <q-btn  size="35px"
            round
            color="black"
            icon="stop"
-           @click="$store.dispatch('take_stop')"
+           @click="$store.dispatch('stop')"
            v-if="recorder_state === 'playing'"></q-btn>
 
    <q-list bordered>

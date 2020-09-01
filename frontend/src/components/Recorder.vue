@@ -5,7 +5,7 @@
       fill-input
       use-input
       :value="next_take.name"
-      @input-value="(val) => $store.dispatch('next_take_name', val)"
+      @input-value="(val) => $store.dispatch('set_next_take_name', val)"
       hide-selected
       :options="song_titles"
       label="Takename"></q-select>
