@@ -1,8 +1,7 @@
 import logging
 from os import mkdir, path
-from random import random
 from shutil import copy
-from threading import Lock, Timer, RLock, Thread
+from threading import Timer, RLock, Thread
 from time import sleep
 
 import reapy
@@ -10,7 +9,6 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from reapy.errors import DisabledDistAPIError
-from reapy.tools._inside_reaper import inside_reaper
 
 from ssr.apps.models.models import Session, Take
 import reapy.reascript_api
@@ -62,6 +60,28 @@ CONNECTED = {
 }
 
 
+class ApplicationState:
+    def __init__(self):
+        self.state = {
+            'RECORDER_UPDATE': {},
+            'UPDATE_FULL_SESSION': {}
+        }
+
+    def update(self, module, data):
+        # log.info("state update %s -> %s", module, data)
+        self.state[module] = data
+        async_to_sync(get_channel_layer().group_send)(
+            SESSION_ROOM_NAME,
+            {
+                'type': 'send_update',
+                'scope': module
+             }
+        )
+
+
+appState = ApplicationState()
+
+
 class ReaperRecorder:
     def __init__(self):
         self.connected_once = False
@@ -111,9 +131,9 @@ class ReaperRecorder:
         return project.length
 
     @reaper_access
-    def take_select(self, take):
+    def select(self, start, length):
         project = reapy.Project()
-        project.time_selection = take.location, take.location + take.length
+        project.time_selection = start, start + length
         project.perform_action(40630)  # go to start of selection
 
     @reaper_access
@@ -145,6 +165,9 @@ class ReaperRecorder:
     @reaper_access
     def get_status(self):
         project = reapy.Project()
+        if project.name == '':
+            return CONNECTED
+
         state = 'ready'
         position = 0
         if project.is_recording:
@@ -163,13 +186,15 @@ class ReaperRecorder:
 reaper = ReaperRecorder()
 
 
+
 def with_session(f):
-    def inner(*args, **kwargs):
-        session = Session.objects.filter(pk=args[0].session_id).first()
-        if session:
-            args = list(args)
-            args.append(session)
-            return f(*args, **kwargs)
+    def inner(self, *args, **kwargs):
+        session = Session.objects.filter(pk=self.session_id).first()
+        if session and self.reaper.get_open_project_path() == session.project_file:
+            args = args + (session,)
+            result = f(self, *args, **kwargs)
+            appState.update('UPDATE_FULL_SESSION', session.to_dict())
+            return result
         else:
             log.warning("No active session, did not execute %s" % f.__name__)
     return inner
@@ -192,7 +217,7 @@ class SessionRecorder():
 
     def scheduled_recorder_update(self):
         while True:
-            sleep(.2)
+            sleep(.1)
             if self.recorder_state != DISCONNECTED:
                 self._send_update(recorder=True, session=False)
 
@@ -200,13 +225,15 @@ class SessionRecorder():
         log.warning("Reaper connected-   - - - - - - - - -")
         self.recorder_state = CONNECTED
         self._identfy_open_project()
-        self._send_update(recorder=True)
 
     def on_reaper_disconnected(self):
         log.warning("Reaper was disconnected, will try to reconnect soon")
         self.session_id = None
         self.recorder_state = DISCONNECTED
-        Timer(10, reaper.connect).start()
+        timer = Timer(10, reaper.connect)
+        timer.setDaemon(True)
+        timer.start()
+
         self._send_update(session=False)
 
     def session_start(self, session_name):
@@ -238,14 +265,14 @@ class SessionRecorder():
         end_position = reaper.stop()
         session.active_take.length = end_position - session.active_take.location
         session.active_take.save()
-        reaper.take_select(session.active_take)
+        reaper.select(session.active_take.location, session.active_take.length)
         self._send_update(recorder=True)
 
 
     @with_session
     def take_select(self, number, session):
         take = session.takes.filter(number=number).first()
-        reaper.take_select(take)
+        reaper.select(take.location, take.length)
         session.active_take = take
         session.save()
         self._send_update(recorder=True)
@@ -260,25 +287,15 @@ class SessionRecorder():
         reaper.play()
         self._send_update(recorder=True)
 
+    @with_session
     def stop(self, *args):
         reaper.stop()
         self._send_update(recorder=True)
 
     def _send_update(self, session=True, recorder=False):
         if recorder:
-            if self.session_id:
-                self.recorder_state = reaper.get_status()
-
-            async_to_sync(get_channel_layer().group_send)(
-                SESSION_ROOM_NAME,
-                {'type': 'send_recorder_update'}
-            )
-
-        if session:
-            async_to_sync(get_channel_layer().group_send)(
-                SESSION_ROOM_NAME,
-                {'type': 'send_session_update'}
-            )
+            self.recorder_state = reaper.get_status()
+            appState.update('RECORDER_UPDATE', self.recorder_state)
 
     def _create_take(self, session, position):
         take = session.takes.create(number=session.next_take_number,
@@ -292,18 +309,21 @@ class SessionRecorder():
     def _create_session(self, name, session_file_host):
         session = Session.objects.create(name=name, username=CURRENT_USER,
                                          project_file=session_file_host)
+
         self.session_id = session.id
 
     def _identfy_open_project(self):
-        log.warning("Identigy open Pro")
+        log.warning("Identigy open Project")
         session_file = reaper.get_open_project_path()
-        log.warning(":" + str(session_file))
+
         session = Session.objects.filter(project_file=session_file).first()
         if session:
+            appState.update('UPDATE_FULL_SESSION', session.to_dict())
             self.session_id = session.id
 
 
 recorder = SessionRecorder()
+
 
 
 class RemoteConsumer(JsonWebsocketConsumer):
@@ -315,23 +335,13 @@ class RemoteConsumer(JsonWebsocketConsumer):
         )
 
         self.send_json(mutation('ACTIVE_USER', CURRENT_USER))
-        self.send_session_update()
-        self.send_recorder_update()
 
-    def send_recorder_update(self, *args):
-        log.warning("Sending Recorder Update %s" % recorder.recorder_state)
-        self.send_json(mutation('RECORDER_UPDATE', recorder.recorder_state))
+        self.send_update({'scope': 'UPDATE_FULL_SESSION'})
+        self.send_update({'scope': 'RECORDER_UPDATE'})
 
-    def send_session_update(self, *args):
-        session = Session.objects.filter(pk=recorder.session_id).first()
-
-        if session:
-            log.warning("Sending Session Update %s" % session.to_dict())
-            self.send_json(mutation('UPDATE_FULL_SESSION', session.to_dict()))
-        else:
-            log.warning("Sending empty session")
-
-            self.send_json(mutation('UPDATE_FULL_SESSION', {}))
+    def send_update(self, data):
+        scope = data['scope']
+        self.send_json(mutation(scope, appState.state[scope]))
 
     def receive_json(self, content, **kwargs):
         getattr(recorder, content['action'])(content.get('data', None))
