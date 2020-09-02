@@ -202,3 +202,8 @@ LOGGING = {
         },
     }
 }
+SESSION_ROOM_NAME = 'session'
+REAPER_IP = "192.168.178.32"
+HOST_PATH = "/Users/csp/Projects/session-recorder/var/sessions/"
+BASE_PATH = "/sessions/"
+BASE_TEMPLATE = BASE_PATH + "template.RPP"

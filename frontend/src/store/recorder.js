@@ -6,7 +6,7 @@ export default {
   },
 
   mutations: {
-    SOCKET_RECORDER_UPDATE (state, newState) {
+    SOCKET_RECORDER (state, newState) {
       console.log(newState)
       Object.assign(state, newState)
     }

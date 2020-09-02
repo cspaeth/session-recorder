@@ -12,7 +12,7 @@ export default {
   },
 
   mutations: {
-    SOCKET_UPDATE_FULL_SESSION (state, data) {
+    SOCKET_SESSION (state, data) {
       console.log(state)
       Object.assign(state, data)
       console.log(state)
