@@ -19,6 +19,7 @@ Vue.use(Vuex)
  */
 
 export default function (/* { ssrContext } */) {
+  // noinspection ES6ModulesDependencies
   return new Vuex.Store({
     state: {
       connectionState: 'disconnected'

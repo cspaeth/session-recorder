@@ -8,7 +8,7 @@
       @input-value="(val) => $store.dispatch('set_next_take_name', val)"
       hide-selected
       :options="song_titles"
-      label="Takename"></q-select>
+      label="Name des nächten Takes"></q-select>
 
     <div v-if="recorder_state === 'recording'" class="text-h3">Take {{ active_take.number }}: {{ active_take.name }} ({{position_in_take}})</div>
     <q-btn  size="35px"

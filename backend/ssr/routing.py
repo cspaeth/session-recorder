@@ -1,5 +1,3 @@
-from channels.routing import ProtocolTypeRouter
-
 from django.urls import re_path
 
 from . import consumers

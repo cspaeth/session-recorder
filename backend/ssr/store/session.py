@@ -22,10 +22,11 @@ def with_session(f):
     return inner
 
 
-class SessionRecorder(StateModule):
-    name = 'SESSION'
+# noinspection PyUnusedLocal
+class SessionControl(StateModule):
 
     def __init__(self, reaper):
+        super().__init__()
         self.reaper = reaper
         self.session_id = None
         self.reaper.on_connect = self.on_reaper_connected
@@ -33,7 +34,7 @@ class SessionRecorder(StateModule):
 
     def on_reaper_connected(self):
         log.warning("Reaper connected-   - - - - - - - - -")
-        self._identfy_open_project()
+        self._identify_open_project()
 
     def get_module_status(self):
         session = Session.objects.filter(pk=self.session_id).first()
@@ -106,8 +107,8 @@ class SessionRecorder(StateModule):
         session.active_take = take
         session.save()
 
-    def _identfy_open_project(self):
-        log.warning("Identigy open Project")
+    def _identify_open_project(self):
+        log.warning("Identify open Project")
         session_file = self.reaper.get_open_project_path()
 
         session = Session.objects.filter(project_file=session_file).first()

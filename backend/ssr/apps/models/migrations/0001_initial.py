@@ -4,6 +4,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+# noinspection PyUnresolvedReferences,PyPep8
 class Migration(migrations.Migration):
 
     initial = True

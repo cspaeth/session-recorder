@@ -13,7 +13,10 @@
     "@quasar/extras": "^1.0.0",
     "core-js": "^3.6.5",
     "quasar": "^1.0.0",
-    "webpack-bundle-tracker": "^1.0.0-alpha.1"
+    "webpack-bundle-tracker": "^1.0.0-alpha.1",
+    "vue": "^2.6.12",
+    "vuex": "^3.4.0",
+    "vue-router": "^3.2.0"
   },
   "devDependencies": {
     "@quasar/app": "^2.0.0",

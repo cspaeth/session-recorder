@@ -1,9 +1,12 @@
+
+// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
 export default {
   state: {
     user: null
   },
 
   mutations: {
+
     SOCKET_ACTIVE_USER (state, user) {
       state.user = user
     }
