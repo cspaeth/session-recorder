@@ -1,11 +1,66 @@
-from ssr.store import STATUS
+import logging
+
+from collections import OrderedDict
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.conf import settings
+
+log = logging.getLogger(__name__)
+
+
+class ApplicationStore:
+    def __init__(self):
+        self.modules = OrderedDict()
+        self.state = {}
+
+    def all_states(self):
+        return [self.get_status_message(module) for module in self.modules.keys()]
+
+    def get_status_message(self, module_name):
+        return {
+            'action': module_name,
+            'data': self.state[module_name]
+        }
+
+    def register_module(self, module, name):
+        self.modules[name] = module
+        self.state[name] = module.get_module_status()
+        module.add_listener(lambda state: self.update(name, state))
+
+    def update(self, module_name, data):
+        log.info("state update %s -> %s", module_name, data)
+        self.state[module_name] = data
+        async_to_sync(get_channel_layer().group_send)(
+            settings.SESSION_ROOM_NAME,
+            {
+                'type': 'send_update',
+                'scope': module_name
+            }
+        )
+
+    def dispatch_action(self, action_name, data):
+        for module in self.modules.values():
+            method = getattr(module, action_name, None)
+            if method and getattr(method, 'isAction', False):
+                method(data)
 
 
 class StateModule:
-    name = None
+    def __init__(self):
+        self._listeners = []
+
+    def add_listener(self, listener):
+        self._listeners.append(listener)
 
     def update_module_status(self):
-        STATUS.update(self.name, self.get_module_status())
+        status = self.get_module_status()
+        for listener in self._listeners:
+
+            listener(status)
+
+    def get_module_status(self):
+        pass
 
 
 def action(f):

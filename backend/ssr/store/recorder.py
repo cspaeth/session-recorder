@@ -14,40 +14,45 @@ log = logging.getLogger(__name__)
 
 
 DISCONNECTED = {
-    'state': "disconnected"  # connected, ready, recording, playing,
+    'state': "disconnected"
 }
+
 CONNECTED = {
     'state': 'connected'
 }
 
 
+# noinspection PyPep8Naming
 class reaper_access:
     API = RLock()
 
     def __init__(self, send_update=True):
         self.send_update = send_update
 
+    def run_guarded(self, f, *args, **kwargs):
+        with self.API:
+            try:
+                return f(*args, **kwargs)
+            except (ConnectionError, DisabledDistAPIError) as e:
+                log.error("Error connecting to reaper %s" % e)
+                args[0].on_disconnect()
+            finally:
+                if self.send_update:
+                    args[0].update_module_status()
+
     def __call__(self, f):
         def inner(*args, **kwargs):
-            with self.API:
-                log.debug("Reaper guarded: %s " % f.__name__)
-                try:
-                    return f(*args, **kwargs)
-                except (ConnectionError, DisabledDistAPIError):
-                    log.exception("Error connecting to recoder, trying to reconnect")
-                    args[0].on_disconnect()
-                finally:
-                    if self.send_update:
-                        args[0].update_module_status()
+            return self.run_guarded(f, *args, **kwargs)
         return inner
 
 
 class ReaperRecorder(StateModule):
-    name = 'RECORDER'
 
     def __init__(self):
+        super().__init__()
         self.connected_once = False
         self.is_connected = False
+        self.on_connect = None
 
     def periodic_recorder_update(self):
         while True:
@@ -65,7 +70,7 @@ class ReaperRecorder(StateModule):
     @reaper_access()
     def connect(self):
         if not self.connected_once:
-            log.warning("Connecting to reaper (adress=%s)..." % settings.REAPER_IP)
+            log.warning("Connecting to reaper (address=%s)..." % settings.REAPER_IP)
             reapy.connect(settings.REAPER_IP)
             self.connected_once = True
             Thread(target=self.periodic_recorder_update, daemon=True).start()
@@ -75,7 +80,9 @@ class ReaperRecorder(StateModule):
 
         self.is_connected = True
         log.info("Connected to reaper!")
-        self.on_connect()
+
+        if self.on_connect:
+            self.on_connect()
 
     @reaper_access()
     def start_new_project(self, name):
@@ -127,15 +134,11 @@ class ReaperRecorder(StateModule):
         if current_project.is_dirty:
             current_project.save()
 
-    def _create_project_from_template(self, name):
-        session_file = path.join(name, "%s.RPP" % name)
-        mkdir(path.join(settings.BASE_PATH, name))
-        copy(settings.BASE_TEMPLATE, path.join(settings.BASE_PATH, session_file))
-        session_file_host = path.join(settings.HOST_PATH, session_file)
-        return session_file_host
-
     @reaper_access(send_update=False)
     def get_module_status(self):
+        if not self.is_connected:
+            return DISCONNECTED
+
         project = reapy.Project()
         if project.name == '':
             return CONNECTED
@@ -158,3 +161,11 @@ class ReaperRecorder(StateModule):
         if self.get_open_project_path() != project_file:
             self._save_current_project()
             reapy.open_project(project_file)
+
+    @staticmethod
+    def _create_project_from_template(name):
+        session_file = path.join(name, "%s.RPP" % name)
+        mkdir(path.join(settings.BASE_PATH, name))
+        copy(settings.BASE_TEMPLATE, path.join(settings.BASE_PATH, session_file))
+        session_file_host = path.join(settings.HOST_PATH, session_file)
+        return session_file_host
