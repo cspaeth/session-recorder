@@ -71,9 +71,12 @@ class SessionControl(StateModule):
     @with_session
     def take_stop(self, data, session):
         end_position = self.reaper.stop()
-        session.active_take.length = end_position - session.active_take.location
-        session.active_take.save()
-        self.reaper.select(session.active_take.location, session.active_take.length)
+        active_take = session.active_take
+        active_take.length = end_position - active_take.location
+        active_take.save()
+        self.reaper.select(active_take.location, active_take.length)
+        self.reaper.add_take_marker(active_take.location, active_take.length,
+                                    "Take %s - %s" % (active_take.number, active_take.name))
 
     @action
     @with_session

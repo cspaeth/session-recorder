@@ -1,10 +1,10 @@
+import os
+import reapy
 from os import mkdir
 from shutil import copy
 from os import path
 from threading import RLock, Timer, Thread
 from time import sleep
-
-import reapy
 from django.conf import settings
 from reapy.errors import DisabledDistAPIError
 
@@ -99,21 +99,32 @@ class ReaperRecorder(StateModule):
     def start_recording(self):
         project = reapy.Project()
         project.perform_action(40043)  # Go to end of project
+        project.perform_action(41040)  # Go to next measure start
+        project.perform_action(41040)  # ... again - to create a bit of space between takes
+
         start_position = project.cursor_position
-        project.perform_action(1013)  # Record
+        self._addGuideTrack(project, start_position)
+
+        project.record()
         return start_position
 
     @reaper_access()
     def stop(self):
         project = reapy.Project()
+        position = project.play_position
         project.stop()
-        return project.length
+        return position
 
     @reaper_access()
     def select(self, start, length):
         project = reapy.Project()
         project.time_selection = start, start + length
         project.perform_action(40630)  # go to start of selection
+
+    @reaper_access()
+    def add_take_marker(self, start, length, name):
+        project = reapy.Project()
+        project.add_region(start, start + length, name)
 
     @reaper_access()
     def seek(self, position):
@@ -156,6 +167,17 @@ class ReaperRecorder(StateModule):
             'position': position,
             'state': state
         }
+
+    def _addGuideTrack(self, project, start_position):
+        guide_dir = path.join(project.path, "guide")
+        guide_dir_local = guide_dir.replace(settings.HOST_PATH, settings.BASE_PATH)
+        if path.exists(guide_dir_local):
+            candidates = [f for f in os.listdir(guide_dir_local) if f.endswith(".mp3")]
+            if candidates:
+                guide_track = path.join(guide_dir, candidates[0])
+                project.selected_tracks = [project.tracks[0]]
+                reapy.reascript_api.InsertMedia(guide_track, 0)
+                project.cursor_position = start_position
 
     def _open_project(self, project_file):
         if self.get_open_project_path() != project_file:
