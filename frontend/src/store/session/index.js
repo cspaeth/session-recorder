@@ -14,9 +14,7 @@ export default {
 
   mutations: {
     SOCKET_SESSION (state, data) {
-      console.log(state)
       Object.assign(state, data)
-      console.log(state)
     }
   },
 

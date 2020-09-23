@@ -8,7 +8,6 @@ export default {
 
   mutations: {
     SOCKET_RECORDER (state, newState) {
-      console.log(newState)
       Object.assign(state, newState)
     }
   },

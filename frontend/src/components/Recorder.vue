@@ -4,7 +4,7 @@
       v-if="recorder_state === 'ready'"
       fill-input
       use-input
-      :value="next_take.name"
+      :value="next_take_name"
       @input-value="(val) => $store.dispatch('set_next_take_name', val)"
       hide-selected
       :options="song_titles"
@@ -15,7 +15,7 @@
             round
             color="red"
             icon="fiber_manual_record"
-            @click="$store.dispatch('take_start', nexttake)"
+            @click="$store.dispatch('take_start', next_take)"
             v-if="recorder_state === 'ready'"></q-btn>
     <q-btn  size="35px"
             round
@@ -39,11 +39,24 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'Recorder',
+  data: () => {
+    return {
+      next_take_name: ''
+    }
+  },
 
+  watch: {
+    next_take: {
+      immediate: true,
+      handler (newValue) {
+        this.next_take_name = newValue.name
+      }
+    }
+  },
   computed: {
     ...mapGetters(['recorder_state', 'active_take', 'next_take', 'position_in_take']),
     song_titles () {
-      return this.$store.getters.all_takes.map((take) => take.name)
+      return [...new Set(this.$store.getters.all_takes.map((take) => take.name))]
     }
   }
 }
