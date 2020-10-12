@@ -33,6 +33,13 @@ export default {
         data: name
       }))
     },
+
+    session_open (context, id) {
+      this.$socket.send(JSON.stringify({
+        action: 'session_open',
+        data: id
+      }))
+    },
     session_close () {
       this.$socket.send(JSON.stringify({
         action: 'session_close',

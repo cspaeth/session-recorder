@@ -29,7 +29,7 @@ class ApplicationStore:
         module.add_listener(lambda state: self.update(name, state))
 
     def update(self, module_name, data):
-        log.info("state update %s -> %s", module_name, data)
+        # log.info("state update %s -> %s", module_name, data)
         self.state[module_name] = data
         async_to_sync(get_channel_layer().group_send)(
             settings.SESSION_ROOM_NAME,

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import session from './session'
 import webSocketPlugin from './ws'
+import sessions from './sessions'
 import auth from './auth'
 import recorder from './recorder'
 
@@ -27,7 +28,8 @@ export default function (/* { ssrContext } */) {
     modules: {
       session,
       auth,
-      recorder
+      recorder,
+      sessions
     },
 
     actions: {

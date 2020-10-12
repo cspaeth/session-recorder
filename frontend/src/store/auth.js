@@ -13,9 +13,14 @@ export default {
   },
 
   actions: {
-    login (context, username) {
+    login (context, data) {
       this.$socket.send(JSON.stringify({
-        action: 'login', data: 'cspaeth'
+        action: 'login', data
+      }))
+    },
+    logout () {
+      this.$socket.send(JSON.stringify({
+        action: 'logout', data: null
       }))
     }
   },

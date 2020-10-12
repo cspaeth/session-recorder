@@ -91,6 +91,10 @@ class ReaperRecorder(StateModule):
         return session_file_host
 
     @reaper_access()
+    def open_project(self, session_file_host):
+        self._open_project(session_file_host)
+
+    @reaper_access()
     def close_project(self):
         self._save_current_project()
         reapy.Project().close()
@@ -186,7 +190,7 @@ class ReaperRecorder(StateModule):
 
     @staticmethod
     def _create_project_from_template(name):
-        session_file = path.join(name, "%s.RPP" % name)
+        session_file = path.join(name, "session.RPP")
         mkdir(path.join(settings.BASE_PATH, name))
         copy(settings.BASE_TEMPLATE, path.join(settings.BASE_PATH, session_file))
         session_file_host = path.join(settings.HOST_PATH, session_file)

@@ -1,7 +1,6 @@
 import logging
 
 from ssr.apps.models.models import Session
-from ssr.store.auth import CURRENT_USER
 from ssr.store.util import StateModule, action
 
 log = logging.getLogger(__name__)
@@ -25,9 +24,10 @@ def with_session(f):
 # noinspection PyUnusedLocal
 class SessionControl(StateModule):
 
-    def __init__(self, reaper):
+    def __init__(self, reaper, auth):
         super().__init__()
         self.reaper = reaper
+        self.auth = auth
         self.session_id = None
         self.reaper.on_connect = self.on_reaper_connected
         self.reaper.connect()
@@ -43,10 +43,18 @@ class SessionControl(StateModule):
 
     @action
     def session_start(self, session_name):
-        session_file_location = self.reaper.start_new_project(session_name)
-        session = Session.objects.create(name=session_name, username=CURRENT_USER,
+        session_file_location = self.reaper.start_new_project("%s/%s" % (self.auth.current_user, session_name))
+        session = Session.objects.create(name=session_name, username=self.auth.current_user,
                                          project_file=session_file_location)
         self.session_id = session.id
+        self.update_module_status()
+
+    @action
+    def session_open(self, session_id):
+        if self.auth.current_user:
+            session = Session.objects.get(pk=int(session_id))
+            self.reaper.open_project(session.project_file)
+            self.session_id = session.id
         self.update_module_status()
 
     @action
