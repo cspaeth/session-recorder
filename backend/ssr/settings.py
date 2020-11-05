@@ -203,7 +203,8 @@ LOGGING = {
     }
 }
 SESSION_ROOM_NAME = 'session'
-REAPER_IP = "192.168.178.32"
+REAPER_IP = "host.docker.internal"
 HOST_PATH = "/Users/csp/Projects/session-recorder/var/sessions/"
 BASE_PATH = "/sessions/"
 BASE_TEMPLATE = BASE_PATH + "template.RPP"
+DROPBOX_TOKEN = os.environ.get('DROPBOX_TOKEN')

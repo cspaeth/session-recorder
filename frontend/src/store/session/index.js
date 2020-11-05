@@ -46,6 +46,25 @@ export default {
         data: null
       }))
     },
+    session_upload () {
+      this.$socket.send(JSON.stringify({
+        action: 'session_upload',
+        data: null
+      }))
+    },
+
+    take_queue (context, takeNumber) {
+      this.$socket.send(JSON.stringify({
+        action: 'take_queue',
+        data: takeNumber
+      }))
+    },
+    take_unqueue (context, takeNumber) {
+      this.$socket.send(JSON.stringify({
+        action: 'take_unqueue',
+        data: takeNumber
+      }))
+    },
 
     logout () {
 

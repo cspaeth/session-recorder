@@ -1,8 +1,9 @@
 from django.urls import re_path
 
+from . import processing
 from . import consumers
 from channels.auth import AuthMiddlewareStack
-from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.routing import ProtocolTypeRouter, URLRouter, ChannelNameRouter
 
 websocket_urlpatterns = [
     re_path(r'ws/remote/$', consumers.RemoteConsumer),
@@ -17,4 +18,7 @@ application = ProtocolTypeRouter({
             websocket_urlpatterns
         )
     ),
+    "channel": ChannelNameRouter({
+        "processuploads": processing.UploadProcessor,
+    }),
 })

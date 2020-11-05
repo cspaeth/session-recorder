@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import CASCADE, SET_NULL
+from django_fsm import FSMField, transition
 
 
 class Session(models.Model):
@@ -27,7 +28,8 @@ class Session(models.Model):
                 'number': take.number,
                 'name': take.name,
                 'length': take.length,
-                'started_at': '12:31'
+                'started_at': take.started_at.strftime("%d.%m.%Y - %H:%M"),
+                'state': take.state
             })
         return result
 
@@ -39,6 +41,32 @@ class Take(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     location = models.FloatField()
     length = models.FloatField(null=True)
+    take_mix_source = models.CharField(max_length=1024, null=True)
+    take_mix_processed = models.CharField(max_length=1024, null=True)
+
+    state = FSMField(default="started")
+
+    @transition(field=state, source="started", target="queued")
+    def stop(self):
+        pass
+
+    @transition(field=state, source="recorded", target="queued")
+    def queue(self):
+        pass
+
+    @transition(field=state, source="queued", target="recorded")
+    def unqueue(self):
+        pass
+
+    @transition(field=state, source="queued", target="processing")
+    def processing_started(self):
+        pass
+
+    @transition(field=state, source="processing", target="uploaded")
+    def upload_finished(self):
+        pass
+
+
 
 
 

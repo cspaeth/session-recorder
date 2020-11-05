@@ -1,5 +1,7 @@
 import logging
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from ssr.apps.models.models import Session
 from ssr.store.util import StateModule, action
 
@@ -65,9 +67,35 @@ class SessionControl(StateModule):
 
     @action
     @with_session
+    def session_upload(self, data, session):
+        async_to_sync(get_channel_layer().send)(
+            "processuploads",
+            {
+                'type': 'upload_session',
+                'session_id': session.id
+            }
+        )
+
+    @action
+    @with_session
     def set_next_take_name(self, take_name, session):
         session.next_take_name = take_name
         session.save()
+
+
+    @action
+    @with_session
+    def take_queue(self, take_number, session):
+        take = session.takes.filter(number=take_number).first()
+        take.queue()
+        take.save()
+
+    @action
+    @with_session
+    def take_unqueue(self, take_number, session):
+        take = session.takes.filter(number=take_number).first()
+        take.unqueue()
+        take.save()
 
     @action
     @with_session
@@ -78,9 +106,11 @@ class SessionControl(StateModule):
     @action
     @with_session
     def take_stop(self, data, session):
-        end_position = self.reaper.stop()
+        (length, filename) = self.reaper.stop_recording()
         active_take = session.active_take
-        active_take.length = end_position - active_take.location
+        active_take.take_mix_source = filename
+        active_take.length = length
+        active_take.stop()
         active_take.save()
         self.reaper.select(active_take.location, active_take.length)
         self.reaper.add_take_marker(active_take.location, active_take.length,

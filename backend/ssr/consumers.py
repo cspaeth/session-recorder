@@ -22,6 +22,9 @@ class RemoteConsumer(JsonWebsocketConsumer):
         for status in store.all_states():
             self.send_json(status)
 
+    def session_update(self, data):
+        store.modules['SESSION'].update_module_status()
+
     def send_update(self, data):
         self.send_json(store.get_status_message(data['scope']))
 

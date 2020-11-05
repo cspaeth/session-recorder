@@ -2,3 +2,6 @@ Django
 channels
 channels-redis
 python-reapy
+django-fsm
+pydub
+dropbox

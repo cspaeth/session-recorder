@@ -113,11 +113,17 @@ class ReaperRecorder(StateModule):
         return start_position
 
     @reaper_access()
-    def stop(self):
+    def stop_recording(self):
         project = reapy.Project()
-        position = project.play_position
         project.stop()
-        return position
+
+        item = next((i for i in project.selected_items if i.track.name == "Console Mix"), None)
+        if item:
+            return item.length, item.active_take.source.filename
+
+    @reaper_access()
+    def stop(self):
+        reapy.Project().stop()
 
     @reaper_access()
     def select(self, start, length):
