@@ -4,6 +4,7 @@ import session from './session'
 import webSocketPlugin from './ws'
 import sessions from './sessions'
 import auth from './auth'
+import mixer from './mixer'
 import recorder from './recorder'
 
 // import example from './module-example'
@@ -29,7 +30,8 @@ export default function (/* { ssrContext } */) {
       session,
       auth,
       recorder,
-      sessions
+      sessions,
+      mixer
     },
 
     actions: {
