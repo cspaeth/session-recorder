@@ -3,47 +3,33 @@ from os import path
 from pathlib import Path
 
 import dropbox
-from asgiref.sync import async_to_sync
 from channels.consumer import SyncConsumer
-from channels.layers import get_channel_layer
 from django.conf import settings
 from dropbox.exceptions import ApiError
 from dropbox.files import GetMetadataError
 from pydub import AudioSegment
 
 from ssr.apps.models.models import Session, Take
-from ssr.utils import to_container_path
+from ssr.utils import to_container_path, send_to_group
 
 
 class UploadProcessor(SyncConsumer):
 
     def upload_session(self, message):
-        session = Session.objects.get(pk=message['session_id'])
+        print("Uploading session")
+        session = Session.objects.get(pk=message['data'])
         print(session)
         for take in session.takes.filter(state="queued"):
             take.processing_started()
             take.save()
-            async_to_sync(get_channel_layer().group_send)(
-                settings.SESSION_ROOM_NAME,
-                {
-                    'type': 'session_update',
-                }
-            )
+            send_to_group(settings.SESSION_GROUP_NAME, "session_update", None)
 
             self.upload_file(take.id)
 
             take.upload_finished()
             take.save()
+            send_to_group(settings.SESSION_GROUP_NAME, "session_update", None)
 
-            async_to_sync(get_channel_layer().group_send)(
-                settings.SESSION_ROOM_NAME,
-                {
-                    'type': 'session_update',
-                }
-            )
-
-        #
-        #
 
     def upload_file(self, take_id):
         take = Take.objects.get(pk=take_id)

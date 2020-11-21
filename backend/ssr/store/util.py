@@ -1,10 +1,8 @@
 import logging
 
 from collections import OrderedDict
-
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.conf import settings
+from ssr.utils import send_to_group
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +29,7 @@ class ApplicationStore:
     def update(self, module_name, data):
         # log.info("state update %s -> %s", module_name, data)
         self.state[module_name] = data
-        async_to_sync(get_channel_layer().group_send)(
-            settings.SESSION_ROOM_NAME,
-            {
-                'type': 'send_update',
-                'scope': module_name
-            }
-        )
+        send_to_group(settings.SESSION_GROUP_NAME, 'send_update', module_name)
 
     def dispatch_action(self, action_name, data):
         for module in self.modules.values():

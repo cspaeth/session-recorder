@@ -202,7 +202,10 @@ LOGGING = {
         },
     }
 }
-SESSION_ROOM_NAME = 'session'
+SESSION_GROUP_NAME = 'session'
+MIXER_GROUP_NAME = 'x32_in'
+MIXER_CHANNEL_NAME = 'x32_out'
+
 REAPER_IP = "host.docker.internal"
 HOST_PATH = "/Users/csp/Projects/session-recorder/var/sessions/"
 BASE_PATH = "/sessions/"

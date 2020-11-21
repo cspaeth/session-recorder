@@ -6,7 +6,7 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter, ChannelNameRouter
 
 websocket_urlpatterns = [
-    re_path(r'ws/remote/$', consumers.RemoteConsumer),
+    re_path(r'ws/remote/$', consumers.RemoteConsumer.as_asgi()),
     # re_path(r'ws/recorder/$', consumers.RecorderConsumer),
 ]
 

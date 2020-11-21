@@ -1,9 +1,8 @@
 import logging
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from ssr.apps.models.models import Session
 from ssr.store.util import StateModule, action
+from ssr.utils import send_to_channel
 
 log = logging.getLogger(__name__)
 
@@ -68,13 +67,8 @@ class SessionControl(StateModule):
     @action
     @with_session
     def session_upload(self, data, session):
-        async_to_sync(get_channel_layer().send)(
-            "processuploads",
-            {
-                'type': 'upload_session',
-                'session_id': session.id
-            }
-        )
+        send_to_channel('processuploads', 'upload_session', session.id)
+
 
     @action
     @with_session
