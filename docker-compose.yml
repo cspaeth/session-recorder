@@ -54,16 +54,3 @@ services:
       - local
     ports:
       - 8000:8000
-
-  worker:
-    build: ${SRC_DIR:-.}/backend
-    volumes:
-      - ${SRC_DIR:-.}/backend/entrypoint_worker.sh:/entrypoint.sh
-      - ${SRC_DIR:-.}/backend:/src
-      - ${BASE_DIR:-./var}/logs:/logs
-      - ${BASE_DIR:-./var}/sessions:/sessions
-    env_file:
-      - .env
-    networks:
-      - backbone
-      - local

@@ -1,8 +1,9 @@
 import logging
+from threading import Thread
 
 from ssr.apps.models.models import Session
+from ssr.processing import UploadProcessor
 from ssr.store.util import StateModule, action
-from ssr.utils import send_to_channel
 
 log = logging.getLogger(__name__)
 
@@ -67,8 +68,8 @@ class SessionControl(StateModule):
     @action
     @with_session
     def session_upload(self, data, session):
-        send_to_channel('processuploads', 'upload_session', session.id)
-
+        processor = UploadProcessor()
+        Thread(processor.upload_session(self.session_id, self.update_module_status)).start()
 
     @action
     @with_session

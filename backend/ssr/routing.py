@@ -17,8 +17,5 @@ application = ProtocolTypeRouter({
         URLRouter(
             websocket_urlpatterns
         )
-    ),
-    "channel": ChannelNameRouter({
-        "processuploads": processing.UploadProcessor,
-    }),
+    )
 })
