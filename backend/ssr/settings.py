@@ -184,11 +184,6 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
         },
-        'ssr': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
         'django.server': {
             'handlers': ['django.server'],
             'level': 'INFO',
@@ -200,8 +195,14 @@ LOGGING = {
             'propagate': False,
 
         },
+
+        'ssr': {'level': 'INFO', 'handlers': ['console'], 'propagate': False},
+        'ssr.consumers': {'level': 'INFO', 'handlers': ['console'], 'propagate': False},
+        'ssr.store.x32': {'level': 'INFO', 'handlers': ['console'], 'propagate': False},
+        'ssr.store.recorder': {'level': 'INFO', 'handlers': ['console'], 'propagate': False},
     }
 }
+
 SESSION_GROUP_NAME = 'session'
 MIXER_GROUP_NAME = 'x32_in'
 MIXER_CHANNEL_NAME = 'x32_out'

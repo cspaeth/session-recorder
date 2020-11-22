@@ -16,13 +16,15 @@ class RemoteConsumer(JsonWebsocketConsumer):
 
 
     def osc_input(self, data):
-        # print("Sending to ws Client: %s" % str(data['data']))
+        log.debug("Received osc_input, forwarding to ws: %s" % str(data['data']))
         self.send_json({
             'action': "MIXER_OSC_INPUT",
             'data': data['data']
         })
+        log.debug("... forwarded")
 
     def send_initial(self):
+        log.info("Sending initial state to ws")
         for status in store.all_states():
             self.send_json(status)
 
@@ -33,5 +35,6 @@ class RemoteConsumer(JsonWebsocketConsumer):
         self.send_json(store.get_status_message(data['data']))
 
     def receive_json(self, content, **kwargs):
-        # print("Recived from WS")
+        log.debug("Received from ws, about to dispatch: %s" % content)
         store.dispatch_action(content['action'], content.get('data', None))
+        log.debug("... dispatched")

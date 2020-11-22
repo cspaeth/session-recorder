@@ -1,6 +1,7 @@
 import datetime
 import logging
 import time
+import traceback
 from threading import Thread
 from time import sleep
 
@@ -39,68 +40,59 @@ class X32Module(StateModule):
     def __init__(self):
         super().__init__()
 
-        self.last_command = None
         self.cache = {}
-
+        log.info("Starting X32 connection")
         dispatch = dispatcher.Dispatcher()
         dispatch.set_default_handler(self.dispatch_to_room)
         server = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 10033), dispatch)
         self.client = X32UdpClient("192.168.178.21", 10023, server)
-        self.client.send_message("/xinfo", [])
 
+        log.info("Starting keep_alive thread")
         Thread(target=self.keep_alive).start()
+        log.info("Starting osc event handler thread")
         Thread(target=server.serve_forever).start()
-        self.initial_sync()
+        self.full_sync()
 
-    def initial_sync(self):
+    def full_sync(self):
+        log.info("Requesting full sync")
         properties = []
-        for channel in range(1, 32):
+        for channel in range(1, 33):
             properties.append(f'/ch/{channel:02}/mix/fader')
             properties.append(f'/ch/{channel:02}/mix/on')
             properties.append(f'/ch/{channel:02}/config/name')
             properties.append(f'/ch/{channel:02}/config/color')
-
-
             # for bus in range(1, 16):
             #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/level')
-            #
             #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/on')
 
-
-        # print(len(properties))
-        start = time.time()
+        log.debug("Requesting %i properties" % len(properties))
         for prop in properties:
             self.x32_request_value([prop])
-        end = time.time()
-        print(":::: "  + str(end - start))
-        print(end - start)
+        log.debug("... properties requested")
 
     def keep_alive(self):
         while True:
+            log.debug("Sending keep alive (/xremote)")
             self.client.send_message("/xremote", [])
-            # self.client.send_message("/xinfo", [])
             sleep(7)
-            # pprint(self.cache)
-            # self.update_module_status()
+
 
     @action
     def x32_send_value(self, message):
-        # print("sending request value to x32 (%s): (%s) " % (message[0], message[1]))
+        log.debug("Sending value to x32 and group (%s): (%s) " % (message[0], message[1]))
         self.client.send_message(message[0], message[1])
         send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', message)
 
     @action
     def x32_request_value(self, message):
-        # print("sending request value to x32 (%s) " % message[0])
+        log.debug("Sending value request to x32 (%s) " % message[0])
         self.client.send_message(message[0], None)
 
     def dispatch_to_room(self, *a, **ab):
-        self.last_command = datetime.datetime.now()
+        log.debug("Received from x32, send to group: (%s) " % str(a))
         self.cache[a[0]] = a[1]
-        # print("received from x32: (%s) " % str(a))
         send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', a)
 
     def get_module_status(self):
-
-        return { 'osc': self.cache}
+        return {'osc': self.cache}
 

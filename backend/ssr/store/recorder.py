@@ -70,12 +70,12 @@ class ReaperRecorder(StateModule):
     @reaper_access()
     def connect(self):
         if not self.connected_once:
-            log.warning("Connecting to reaper (address=%s)..." % settings.REAPER_IP)
+            log.info("Connecting to reaper (address=%s)..." % settings.REAPER_IP)
             reapy.connect(settings.REAPER_IP)
             self.connected_once = True
             Thread(target=self.periodic_recorder_update, daemon=True).start()
         else:
-            log.warning("Reconnecting to reaper...")
+            log.info("Reconnecting to reaper...")
             reapy.reconnect()
 
         self.is_connected = True
@@ -160,18 +160,35 @@ class ReaperRecorder(StateModule):
         if not self.is_connected:
             return DISCONNECTED
 
-        project = reapy.Project()
-        if project.name == '':
-            return CONNECTED
+        # track_one = 57
+        # track_step = 8
+        # track_count = 20
+        with reapy.inside_reaper():
 
-        state = 'ready'
-        position = 0
-        if project.is_recording:
-            state = 'recording'
-            position = project.play_position - project.cursor_position
-        elif project.is_playing:
-            state = 'playing'
-            position = project.play_position - project.time_selection.start
+            project = reapy.Project()
+            if project.name == '':
+                return CONNECTED
+
+            # channels = []
+            # for command in range(track_one, track_one + track_count * track_step, track_step):
+            #     channels.append(reapy.reascript_api.GetToggleCommandState(command))
+            #
+            # # log.debug(channels)
+            # levels = []
+            # for track in range(track_count):
+            #     track_id = project.tracks[track].id
+            #     levels.append(reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, False))
+            #     reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, True)
+            # log.debug(levels)
+
+            state = 'ready'
+            position = 0
+            if project.is_recording:
+                state = 'recording'
+                position = project.play_position - project.cursor_position
+            elif project.is_playing:
+                state = 'playing'
+                position = project.play_position - project.time_selection.start
 
         return {
             'position': position,
