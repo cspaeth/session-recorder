@@ -47,6 +47,7 @@ services:
       - ${BASE_DIR:-./var}/media:/media
       - ${BASE_DIR:-./var}/logs:/logs
       - ${BASE_DIR:-./var}/sessions:/sessions
+      - ${SRC_DIR:-.}/reaper/templates:/reaper/templates
     env_file:
       - .env
     networks:
