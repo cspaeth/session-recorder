@@ -25,8 +25,9 @@ services:
       - ${BASE_DIR:-./var}/logs:/logs
       - ${BASE_DIR:-./var}/sessions:/sessions
       - ${SRC_DIR:-.}/reaper/templates:/reaper/templates
-      - /Users/csp/Projects/session-recorder/.environment/lib/python3.7/site-packages/reapy/tools/network/client.py:/usr/local/lib/python3.7/site-packages/reapy/tools/network/client.py
-      - /Users/csp/Projects/session-recorder/.environment/lib/python3.7/site-packages/reapy/tools/network/socket.py:/usr/local/lib/python3.7/site-packages/reapy/tools/network/socket.py
+
+      # Temporary, for https://github.com/RomeoDespres/reapy/issues/104
+      - ${SRC_DIR:-.}/backend/patches/reapy_socket_waitall.py:/env/lib/python3.8/site-packages/reapy/tools/network/socket.py
     env_file:
       - .env
     ports:
