@@ -9,14 +9,9 @@ export default {
   mutations: {
 
     SOCKET_MIXER_OSC_INPUT (state, data) {
-      console.log('Input')
-      console.log(data)
       Vue.set(state.osc, data[0], data[1])
     },
     SOCKET_MIXER (state, data) {
-      console.log('Input')
-      console.log(data)
-
       Vue.set(state, 'osc', data.osc)
     }
   },

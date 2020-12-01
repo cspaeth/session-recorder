@@ -3,7 +3,9 @@ export default {
   state: {
     state: 'disconnected',
     current_take: null,
-    position: 0
+    position: 0,
+    metronome: 0,
+    channels: []
   },
 
   mutations: {
@@ -61,8 +63,20 @@ export default {
         action: 'take_seek',
         data: position
       }))
-    }
+    },
+    set_track_armed (context, data) {
+      this.$socket.send(JSON.stringify({
+        action: 'set_track_armed',
+        data: data
+      }))
+    },
 
+    set_metronome_state (context, enable) {
+      this.$socket.send(JSON.stringify({
+        action: 'set_metronome_state',
+        data: enable
+      }))
+    }
   },
 
   getters: {

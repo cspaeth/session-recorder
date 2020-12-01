@@ -8,7 +8,7 @@ from time import sleep
 from django.conf import settings
 from reapy.errors import DisabledDistAPIError
 
-from ssr.store.util import StateModule
+from ssr.store.util import StateModule, action
 import logging
 log = logging.getLogger(__name__)
 
@@ -21,6 +21,12 @@ CONNECTED = {
     'state': 'connected'
 }
 
+GUIDE_TRACK = 0
+CONSOLE_MIX_TRACK = 1
+FIRST_RAW_TRACK = 3
+RAW_TRACK_COUNT = 24
+ACTION_TOGGLE_CHANNEL_1 = 25
+COMMANDS_PER_CHANNEL = 8
 
 # noinspection PyPep8Naming
 class reaper_access:
@@ -56,7 +62,7 @@ class ReaperRecorder(StateModule):
 
     def periodic_recorder_update(self):
         while True:
-            sleep(.1)
+            sleep(.2)
             self.update_module_status()
 
     def on_disconnect(self):
@@ -100,11 +106,14 @@ class ReaperRecorder(StateModule):
         reapy.Project().close()
 
     @reaper_access()
-    def start_recording(self):
+    def start_recording(self, tempo=None):
         project = reapy.Project()
         project.perform_action(40043)  # Go to end of project
-        project.perform_action(41040)  # Go to next measure start
         project.perform_action(41040)  # ... again - to create a bit of space between takes
+
+        if tempo:
+            log.debug("Setting Tempo to %i" % tempo)
+            reapy.reascript_api.SetTempoTimeSigMarker(0, -1, project.cursor_position, -1, -1, tempo, 0, 0, 0)
 
         start_position = project.cursor_position
         self._addGuideTrack(project, start_position)
@@ -117,7 +126,7 @@ class ReaperRecorder(StateModule):
         project = reapy.Project()
         project.stop()
 
-        item = next((i for i in project.selected_items if i.track.name == "Console Mix"), None)
+        item = next((i for i in project.selected_items if i.track.index == CONSOLE_MIX_TRACK), None)
         if item:
             return item.length, item.active_take.source.filename
 
@@ -155,31 +164,43 @@ class ReaperRecorder(StateModule):
         if current_project.is_dirty:
             current_project.save()
 
+    @action
+    @reaper_access()
+    def set_metronome_state(self, enable):
+        metronome_action = enable and 41745 or 41746
+        project = reapy.Project()
+        project.perform_action(metronome_action)
+
+    @action
+    @reaper_access()
+    @reapy.inside_reaper()
+    def set_track_armed(self, data):
+        track_number, record = data
+        project = reapy.Project()
+        track = project.tracks[FIRST_RAW_TRACK + track_number]
+        reapy.reascript_api.SetMediaTrackInfo_Value(track.id, 'I_RECARM', record)
+
     @reaper_access(send_update=False)
     def get_module_status(self):
         if not self.is_connected:
             return DISCONNECTED
 
-        # track_one = 57
-        # track_step = 8
-        # track_count = 20
         with reapy.inside_reaper():
-
             project = reapy.Project()
             if project.name == '':
                 return CONNECTED
 
-            # channels = []
-            # for command in range(track_one, track_one + track_count * track_step, track_step):
-            #     channels.append(reapy.reascript_api.GetToggleCommandState(command))
-            #
-            # # log.debug(channels)
+            channels = []
             # levels = []
-            # for track in range(track_count):
-            #     track_id = project.tracks[track].id
-            #     levels.append(reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, False))
-            #     reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, True)
-            # log.debug(levels)
+            for i in range(RAW_TRACK_COUNT):
+                command = ACTION_TOGGLE_CHANNEL_1 + (FIRST_RAW_TRACK + i) * COMMANDS_PER_CHANNEL
+                channels.append(reapy.reascript_api.GetToggleCommandState(command))
+
+                # track_id = project.tracks[i + FIRST_RAW_TRACK].id
+                # levels.append(reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, False))
+                # reapy.reascript_api.Track_GetPeakHoldDB(track_id, 0, True)
+
+            metronome = reapy.reascript_api.GetToggleCommandState(40364)
 
             state = 'ready'
             position = 0
@@ -192,7 +213,10 @@ class ReaperRecorder(StateModule):
 
         return {
             'position': position,
-            'state': state
+            'state': state,
+            'channels': channels,
+            # 'levels': levels,
+            'metronome': metronome
         }
 
     def _addGuideTrack(self, project, start_position):
@@ -202,7 +226,9 @@ class ReaperRecorder(StateModule):
             candidates = [f for f in os.listdir(guide_dir_local) if f.endswith(".mp3")]
             if candidates:
                 guide_track = path.join(guide_dir, candidates[0])
-                project.selected_tracks = [project.tracks[0]]
+                project.selected_tracks = [project.tracks[GUIDE_TRACK]]
+                project.perform_action(41040)  # Jump two measures forward, insert item
+                project.perform_action(41040)
                 reapy.reascript_api.InsertMedia(guide_track, 0)
                 project.cursor_position = start_position
 

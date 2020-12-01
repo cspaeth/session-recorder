@@ -11,6 +11,7 @@ class Session(models.Model):
     next_take_name = models.CharField(default="", max_length=255)
     project_file = models.CharField(null=True, max_length=1024)
     active_take = models.ForeignKey('Take', related_name='+', null=True, on_delete=SET_NULL)
+    next_take_tempo = models.IntegerField(default=120)
 
     def to_dict(self):
         result = {
@@ -18,6 +19,7 @@ class Session(models.Model):
             'next_take': {
                 'number': self.next_take_number,
                 'name': self.next_take_name,
+                'tempo': self.next_take_tempo
             },
             'takes': [],
             'active_take': self.active_take and self.active_take.number or None

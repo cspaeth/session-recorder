@@ -23,12 +23,24 @@
             icon="stop"
             @click="$store.dispatch('take_stop')"
             v-if="recorder_state === 'recording'"></q-btn>
+
+    <q-toggle @input="(val) => set_metronome_state(val)" :value="$store.state.recorder.metronome === 1">Metronom</q-toggle>
+    <q-input  @input="(val) => set_next_take_tempo(val)" :value="$store.state.session.next_take.tempo" label="Tempo (BPM)"></q-input>
+
+    <div v-for="index in 24" :key="index" >
+      <span class="text-h6">{{index}}</span>
+      <q-toggle @input="(val) => set_track_armed([index - 1, val])" :value="$store.state.recorder.channels[index - 1] === 1">
+        {{$store.state.mixer.osc['/ch/' + pad(index) + '/config/name']}}
+      </q-toggle>
+
+    </div>
+
     <q-inner-loading :showing="recorder_state === 'playing'">
       <q-btn  size="35px"
               round
               color="black"
               icon="stop"
-              @click="$store.dispatch('take_stop')"
+              @click="$store.dispatch('stop')"
             ></q-btn>
     </q-inner-loading>
   </div>
@@ -36,7 +48,8 @@
 
 <script>
 
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
+
 export default {
   name: 'Recorder',
   data: () => {
@@ -58,6 +71,13 @@ export default {
     song_titles () {
       return [...new Set(this.$store.getters.all_takes.map((take) => take.name))]
     }
+  },
+  methods: {
+    pad (i) {
+      return i < 10 ? '0' + i : i
+    },
+    ...mapActions(['set_track_armed', 'set_metronome_state', 'set_next_take_tempo'])
+
   }
 }
 </script>

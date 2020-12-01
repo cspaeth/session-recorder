@@ -7,7 +7,8 @@ export default {
       active_take: 0,
       next_take: {
         number: 1,
-        name: ''
+        name: '',
+        tempo: 100
       }
     }
   },
@@ -24,6 +25,12 @@ export default {
       this.$socket.send(JSON.stringify({
         action: 'set_next_take_name',
         data: name
+      }))
+    },
+    set_next_take_tempo (context, tempo) {
+      this.$socket.send(JSON.stringify({
+        action: 'set_next_take_tempo',
+        data: tempo
       }))
     },
 

@@ -77,6 +77,11 @@ class SessionControl(StateModule):
         session.next_take_name = take_name
         session.save()
 
+    @action
+    @with_session
+    def set_next_take_tempo(self, tempo, session):
+        session.next_take_tempo = tempo
+        session.save()
 
     @action
     @with_session
@@ -95,7 +100,7 @@ class SessionControl(StateModule):
     @action
     @with_session
     def take_start(self, data, session):
-        start_position = self.reaper.start_recording()
+        start_position = self.reaper.start_recording(session.next_take_tempo)
         self._create_take(session, start_position)
 
     @action
