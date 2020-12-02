@@ -32,6 +32,12 @@
       <q-toggle @input="(val) => set_track_armed([index - 1, val])" :value="$store.state.recorder.channels[index - 1] === 1">
         {{$store.state.mixer.osc['/ch/' + pad(index) + '/config/name']}}
       </q-toggle>
+      <Fader :target="'/headamp/0' + pad($store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index']) + '/gain'"></Fader>
+
+      <Button :target="'/headamp/0' + pad($store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index']) + '/phantom'"
+          v-if="$store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index'] != -1"></Button>
+
+      <Fader :target="'/ch/' + pad(index) + '/mix/fader'" ></Fader>
 
     </div>
 
@@ -49,9 +55,12 @@
 <script>
 
 import { mapGetters, mapActions } from 'vuex'
+import Fader from './Fader'
+import Button from './Button'
 
 export default {
   name: 'Recorder',
+  components: { Fader, Button },
   data: () => {
     return {
       next_take_name: ''

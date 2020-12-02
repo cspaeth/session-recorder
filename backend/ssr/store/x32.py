@@ -61,9 +61,15 @@ class X32Module(StateModule):
             properties.append(f'/ch/{channel:02}/mix/on')
             properties.append(f'/ch/{channel:02}/config/name')
             properties.append(f'/ch/{channel:02}/config/color')
+            properties.append(f'/-ha/{channel-1:02}/index')
+
             # for bus in range(1, 16):
             #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/level')
             #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/on')
+
+        for headamp in range(127):
+            properties.append(f'/headamp/{headamp:03}/gain')
+            properties.append(f'/headamp/{headamp:03}/phantom')
 
         log.debug("Requesting %i properties" % len(properties))
         for prop in properties:
