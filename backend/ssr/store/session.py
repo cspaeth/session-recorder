@@ -118,6 +118,19 @@ class SessionControl(StateModule):
 
     @action
     @with_session
+    def take_cancel(self, data, session):
+        (length, filename) = self.reaper.stop_recording()
+        active_take = session.active_take
+        active_take.take_mix_source = filename
+        active_take.length = length
+        active_take.cancel()
+        active_take.save()
+        # self.reaper.select(active_take.location, active_take.length)
+        self.reaper.add_take_marker(active_take.location, active_take.length,
+                                    "Take %s (Canceled) - %s" % (active_take.number, active_take.name))
+
+    @action
+    @with_session
     def take_select(self, number, session):
         take = session.takes.filter(number=number).first()
         self.reaper.select(take.location, take.length)
@@ -128,16 +141,6 @@ class SessionControl(StateModule):
     @with_session
     def take_seek(self, position, session):
         self.reaper.seek(session.active_take.location + position)
-
-    @action
-    @with_session
-    def play(self, *args):
-        self.reaper.play()
-
-    @action
-    @with_session
-    def stop(self, *args):
-        self.reaper.stop()
 
     def _create_take(self, session, position):
         take = session.takes.create(number=session.next_take_number,

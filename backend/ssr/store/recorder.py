@@ -130,8 +130,9 @@ class ReaperRecorder(StateModule):
         if item:
             return item.length, item.active_take.source.filename
 
+    @action
     @reaper_access()
-    def stop(self):
+    def stop(self, *args):
         reapy.Project().stop()
 
     @reaper_access()
@@ -149,8 +150,9 @@ class ReaperRecorder(StateModule):
     def seek(self, position):
         reapy.Project().cursor_position = position
 
+    @action
     @reaper_access()
-    def play(self):
+    def play(self, *args):
         reapy.Project().play()
 
     @reaper_access(send_update=False)

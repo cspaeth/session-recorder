@@ -23,6 +23,12 @@
             icon="stop"
             @click="$store.dispatch('take_stop')"
             v-if="recorder_state === 'recording'"></q-btn>
+    <q-btn  size="20px"
+            round
+            color="red"
+            icon="cancel"
+            @click="$store.dispatch('take_cancel')"
+            v-if="recorder_state === 'recording'"></q-btn>
 
     <q-toggle @input="(val) => set_metronome_state(val)" :value="$store.state.recorder.metronome === 1">Metronom</q-toggle>
     <q-input  @input="(val) => set_next_take_tempo(val)" :value="$store.state.session.next_take.tempo" label="Tempo (BPM)"></q-input>
@@ -35,7 +41,7 @@
       <Fader :target="'/headamp/0' + pad($store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index']) + '/gain'"></Fader>
 
       <Button :target="'/headamp/0' + pad($store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index']) + '/phantom'"
-          v-if="$store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index'] != -1"></Button>
+          v-if="$store.state.mixer.osc['/-ha/' + pad(index-1)+ '/index'] !== -1"></Button>
 
       <Fader :target="'/ch/' + pad(index) + '/mix/fader'" ></Fader>
 

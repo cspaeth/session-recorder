@@ -52,6 +52,10 @@ class Take(models.Model):
     def stop(self):
         pass
 
+    @transition(field=state, source="started", target="canceled")
+    def cancel(self):
+        pass
+
     @transition(field=state, source="recorded", target="queued")
     def queue(self):
         pass

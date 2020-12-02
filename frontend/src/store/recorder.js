@@ -16,18 +16,6 @@ export default {
 
   actions: {
 
-    take_start (context, title) {
-      this.$socket.send(JSON.stringify({
-        action: 'take_start',
-        data: title
-      }))
-    },
-    take_stop () {
-      this.$socket.send(JSON.stringify({
-        action: 'take_stop',
-        data: null
-      }))
-    },
     play () {
       this.$socket.send(JSON.stringify({
         action: 'play',
@@ -40,37 +28,12 @@ export default {
         data: null
       }))
     },
-    take_cancel () {
-
-    },
-
-    take_select (context, number) {
-      this.$socket.send(JSON.stringify({
-        action: 'take_select',
-        data: number
-      }))
-    },
-
-    take_play () {
-      this.$socket.send(JSON.stringify({
-        action: 'take_play',
-        data: null
-      }))
-    },
-
-    take_seek (context, position) {
-      this.$socket.send(JSON.stringify({
-        action: 'take_seek',
-        data: position
-      }))
-    },
     set_track_armed (context, data) {
       this.$socket.send(JSON.stringify({
         action: 'set_track_armed',
         data: data
       }))
     },
-
     set_metronome_state (context, enable) {
       this.$socket.send(JSON.stringify({
         action: 'set_metronome_state',

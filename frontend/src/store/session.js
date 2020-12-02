@@ -72,16 +72,47 @@ export default {
         data: takeNumber
       }))
     },
+    take_start (context, title) {
+      this.$socket.send(JSON.stringify({
+        action: 'take_start',
+        data: title
+      }))
+    },
 
-    logout () {
+    take_stop () {
+      this.$socket.send(JSON.stringify({
+        action: 'take_stop',
+        data: null
+      }))
+    },
 
+    take_cancel () {
+      this.$socket.send(JSON.stringify({
+        action: 'take_cancel',
+        data: null
+      }))
+    },
+
+    take_select (context, takeNumber) {
+      debugger
+      this.$socket.send(JSON.stringify({
+        action: 'take_select',
+        data: takeNumber
+      }))
+    },
+
+    take_seek (context, position) {
+      this.$socket.send(JSON.stringify({
+        action: 'take_seek',
+        data: position
+      }))
     }
 
   },
 
   getters: {
     next_take: state => state.next_take,
-    all_takes: state => state.takes,
+    all_takes: state => state.takes.filter(x => x.state !== 'canceled'),
     session_name: state => state.name,
     active_take (state) {
       return state.takes.find(x => x.number === state.active_take)
