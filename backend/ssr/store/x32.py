@@ -1,7 +1,5 @@
-import datetime
 import logging
-import time
-import traceback
+from collections import OrderedDict
 from threading import Thread
 from time import sleep
 
@@ -51,28 +49,29 @@ class X32Module(StateModule):
         Thread(target=self.keep_alive).start()
         log.info("Starting osc event handler thread")
         Thread(target=server.serve_forever).start()
+
+        self.messages = OrderedDict()
+        for channel in range(1, 33):
+            self.messages[f'/ch/{channel:02}/mix/fader'] = float
+            self.messages[f'/ch/{channel:02}/mix/on'] = int
+            self.messages[f'/ch/{channel:02}/config/name'] = str
+            self.messages[f'/ch/{channel:02}/config/color'] = str
+            self.messages[f'/-ha/{channel-1:02}/index'] = int
+
+
+        for headamp in range(127):
+            self.messages[f'/headamp/{headamp:03}/gain'] = float
+            self.messages[f'/headamp/{headamp:03}/phantom'] = int
+
+        log.debug("Requesting %i properties" % len(self.messages))
+
+
         self.full_sync()
 
     def full_sync(self):
         log.info("Requesting full sync")
-        properties = []
-        for channel in range(1, 33):
-            properties.append(f'/ch/{channel:02}/mix/fader')
-            properties.append(f'/ch/{channel:02}/mix/on')
-            properties.append(f'/ch/{channel:02}/config/name')
-            properties.append(f'/ch/{channel:02}/config/color')
-            properties.append(f'/-ha/{channel-1:02}/index')
 
-            # for bus in range(1, 16):
-            #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/level')
-            #     properties.append(f'/ch/{channel:02}/mix/{bus:02}/on')
-
-        for headamp in range(127):
-            properties.append(f'/headamp/{headamp:03}/gain')
-            properties.append(f'/headamp/{headamp:03}/phantom')
-
-        log.debug("Requesting %i properties" % len(properties))
-        for prop in properties:
+        for prop in self.messages.keys():
             self.x32_request_value([prop])
         log.debug("... properties requested")
 
@@ -85,8 +84,13 @@ class X32Module(StateModule):
 
     @action
     def x32_send_value(self, message):
-        log.debug("Sending value to x32 and group (%s): (%s) " % (message[0], message[1]))
-        self.client.send_message(message[0], message[1])
+        path, value = message
+        log.debug("Sending value to x32 and group (%s): (%s) " % (path, value))
+
+        if path in self.messages:
+            value = self.messages[path](value)
+
+        self.client.send_message(path, value)
         send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', message)
 
     @action
