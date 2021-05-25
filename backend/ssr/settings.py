@@ -29,7 +29,6 @@ ALLOWED_HOSTS = os.environ.get('DOMAINS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     'channels',
-    'ssr.apps.models',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -203,12 +202,6 @@ LOGGING = {
     }
 }
 
-SESSION_GROUP_NAME = 'session'
 MIXER_GROUP_NAME = 'x32_in'
 MIXER_CHANNEL_NAME = 'x32_out'
 
-REAPER_IP = "host.docker.internal"
-HOST_PATH = "/Users/csp/Projects/session-recorder/var/sessions/"
-BASE_PATH = "/sessions/"
-BASE_TEMPLATE = "/reaper/templates/base_template.RPP"
-DROPBOX_TOKEN = os.environ.get('DROPBOX_TOKEN')

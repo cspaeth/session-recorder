@@ -43,7 +43,7 @@ class X32Module(StateModule):
         dispatch = dispatcher.Dispatcher()
         dispatch.set_default_handler(self.dispatch_to_room)
         server = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 10033), dispatch)
-        self.client = X32UdpClient("192.168.178.21", 10023, server)
+        self.client = X32UdpClient("192.168.100.136", 10023, server)
 
         log.info("Starting keep_alive thread")
         Thread(target=self.keep_alive).start()
@@ -55,25 +55,58 @@ class X32Module(StateModule):
             self.messages[f'/ch/{channel:02}/mix/fader'] = float
             self.messages[f'/ch/{channel:02}/mix/on'] = int
             self.messages[f'/ch/{channel:02}/config/name'] = str
-            self.messages[f'/ch/{channel:02}/config/color'] = str
-            self.messages[f'/-ha/{channel-1:02}/index'] = int
+
+        for aux in range(1, 9):
+            self.messages[f'/auxin/{aux:02}/config/name'] = str
+            self.messages[f'/auxin/{aux:02}/mix/fader'] = float
+
+        for fxrtn in range(1, 9):
+            self.messages[f'/fxrtn/{fxrtn:02}/config/name'] = str
+            self.messages[f'/fxrtn/{fxrtn:02}/mix/fader'] = float
+
+        for bus in range(1, 17):
+            self.messages[f'/bus/{bus:02}/config/name'] = str
+            self.messages[f'/bus/{bus:02}/mix/fader'] = float
+
+            for channel in range(1, 33):
+                self.messages[f'/ch/{channel:02}/mix/{bus:02}/level'] = float
+                self.messages[f'/ch/{channel:02}/mix/{bus:02}/on'] = int
+
+            for aux in range(1, 9):
+                self.messages[f'/auxin/{aux:02}/mix/{bus:02}/level'] = float
+                self.messages[f'/auxin/{aux:02}/mix/{bus:02}/on'] = int
 
 
-        for headamp in range(127):
-            self.messages[f'/headamp/{headamp:03}/gain'] = float
-            self.messages[f'/headamp/{headamp:03}/phantom'] = int
+            for fxrtn in range(1, 9):
+                self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/level'] = float
+                self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/on'] = int
+        # [01..08]/config/name string [12]
+            # self.messages[f'/ch/{channel:02}/config/color'] = str
+            # self.messages[f'/-ha/{channel-1:02}/index'] = int
+
+
+        # for headamp in range(127):
+        #     self.messages[f'/headamp/{headamp:03}/gain'] = float
+        #     self.messages[f'/headamp/{headamp:03}/phantom'] = int
 
         log.debug("Requesting %i properties" % len(self.messages))
 
-
-        self.full_sync()
+        Thread(target=self.full_sync).start()
 
     def full_sync(self):
         log.info("Requesting full sync")
 
         for prop in self.messages.keys():
             self.x32_request_value([prop])
-        log.debug("... properties requested")
+            i = 0
+            while not prop in self.cache:
+                # log.info("waiting %s" % prop)
+                i += 1
+                if i > 3000:
+                    log.warning("Sync canceled")
+                    return
+                sleep(.001)
+        log.info("... properties requested")
 
     def keep_alive(self):
         while True:

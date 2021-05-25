@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 ENV PYTHONUNBUFFERED 1
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get -qy update
+RUN apt-get -qy update --fix-missing
 RUN apt-get -qy install python3 python3-pip postgresql postgresql-contrib libpq-dev ffmpeg
 RUN pip3 install virtualenv
 RUN virtualenv /env

@@ -5,7 +5,7 @@ setup(
     name='Spiral Session Recorder',
     version=__version__,
 
-    author='Christian Späth',
+    author='Christian Spaeth',
     author_email='mail@cspaeth.de',
 
     packages=find_packages(),

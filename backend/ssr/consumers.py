@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class RemoteConsumer(JsonWebsocketConsumer):
-    groups = [settings.SESSION_GROUP_NAME, settings.MIXER_GROUP_NAME]
+    groups = [settings.MIXER_GROUP_NAME]
 
     def connect(self):
         log.info("Client Connected")

@@ -15,7 +15,6 @@ services:
     image: redis
 
   backend:
-
     build: ${SRC_DIR:-.}/backend
     volumes:
       - ${SRC_DIR:-.}/backend/entrypoint.sh:/entrypoint.sh
@@ -23,11 +22,6 @@ services:
       - ${BASE_DIR:-./var}/static:/static
       - ${BASE_DIR:-./var}/media:/media
       - ${BASE_DIR:-./var}/logs:/logs
-      - ${BASE_DIR:-./var}/sessions:/sessions
-      - ${SRC_DIR:-.}/reaper/templates:/reaper/templates
-
-      # Temporary, for https://github.com/RomeoDespres/reapy/issues/104
-      - ${SRC_DIR:-.}/backend/patches/reapy_socket_waitall.py:/env/lib/python3.8/site-packages/reapy/tools/network/socket.py
     env_file:
       - .env
     ports:
