@@ -1,44 +1,41 @@
 <template>
   <div id="q-app" >
+    <q-layout view="hHh lpR fFf">
 
-    <div>
-      <q-toolbar class="bg-purple text-white">
-        <q-btn flat round dense icon="menu" />
-        <q-toolbar-title>
-          Mix
-        </q-toolbar-title>
-      </q-toolbar>
+      <q-header elevated class="bg-primary text-white">
+        <q-toolbar>
+          <q-btn dense flat round icon="menu" @click="left = !left" />
 
-      <div>
+          <q-toolbar-title>
+            X32 Mixer
 
-          <Fader v-for="index in 32" :key="index"
-                 :target="'/ch/' + pad(index) + '/mix/fader'"
-                 :name="index + ' - ' + $store.state.mixer.osc['/ch/' + pad(index) + '/config/name']">
-          </Fader>
+          </q-toolbar-title>
+        </q-toolbar>
+      </q-header>
 
-      </div>
-      <div >
-        <div v-for="index in 8" :key="index" >
+      <q-drawer show-if-above v-model="left" side="left" elevated>
+        <q-list bordered separator>
+          <q-item clickable v-ripple  :active="bus == null" @click="bus = null">
+            <q-item-section>Main</q-item-section>
+          </q-item>
 
-          <Fader :target="'/fxrtn/' + pad(index) + '/mix/fader'" :name="index + ' - ' + $store.state.mixer.osc['/fxrtn/' + pad(index) + '/config/name']"></Fader>
+          <q-item clickable v-ripple
+                  v-for="index in 12" :key="index"
+                  @click="bus = index"
+                  :active="bus == index">
+            <q-item-section>{{bus_name(index)}}</q-item-section>
+          </q-item>
+        </q-list>
 
-        </div>
-      </div>
-      <div >
-        <div v-for="index in 8" :key="index" >
+      </q-drawer>
 
-          <Fader :target="'/auxin/' + pad(index) + '/mix/fader'" :name="index + ' - ' + $store.state.mixer.osc['/auxin/' + pad(index) + '/config/name']"></Fader>
+      <q-page-container>
 
-        </div>
-      </div>
-      <div >
-        <div v-for="index in 16" :key="index" >
+        <Mixer :bus="bus"></Mixer>
+      </q-page-container>
 
-          <Fader :target="'/bus/' + pad(index) + '/mix/fader'" :name="index + ' - ' + $store.state.mixer.osc['/bus/' + pad(index) + '/config/name']"></Fader>
+    </q-layout>
 
-        </div>
-      </div>
-    </div>
     <q-inner-loading :showing="connection_state !== 'connected'">
       <q-spinner-gears size="50px" color="primary" v-if="connection_state === 'connecting'"></q-spinner-gears>
       <q-btn @click="$store.$socket.reconnect()" label="Verbinden" v-if="connection_state === 'disconnected'"></q-btn>
@@ -49,18 +46,47 @@
 <script>
 
 import { mapGetters } from 'vuex'
-import Fader from './components/Fader'
+import Mixer from './components/Mixer'
 
 export default {
+  data () {
+    return {
+      bus: null,
+      left: null
+    }
+  },
   name: 'App',
-  components: { Fader },
+  components: { Mixer },
   computed: {
-    ...mapGetters(['current_user', 'recorder_state', 'connection_state'])
+    ...mapGetters(['current_user', 'connection_state'])
   },
   methods: {
     pad (i) {
       return i < 10 ? '0' + i : i
+    },
+    bus_color (bus) {
+      const path = '/bus/' + this.pad(bus) + '/config/color'
+      return 'x32-color-' + this.$store.state.mixer.osc[path]
+    },
+    bus_name (bus) {
+      if (bus) {
+        const path = '/bus/' + this.pad(bus) + '/config/name'
+        return this.$store.state.mixer.osc[path]
+      }
+      return 'Main L/R'
     }
   }
+
 }
 </script>
+<style>
+  .x32-color-1 {
+    background: green;
+  }
+  .x32-color-2 {
+    background: blue;
+  }
+  .q-item--active {
+    background: lightgrey;
+  }
+</style>
