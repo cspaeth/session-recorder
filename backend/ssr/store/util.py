@@ -29,7 +29,7 @@ class ApplicationStore:
     def update(self, module_name, data):
         # log.info("state update %s -> %s", module_name, data)
         self.state[module_name] = data
-        send_to_group(settings.SESSION_GROUP_NAME, 'send_update', module_name)
+        send_to_group(settings.MIXER_GROUP_NAME, 'send_update', module_name)
 
     def dispatch_action(self, action_name, data):
         for module in self.modules.values():
