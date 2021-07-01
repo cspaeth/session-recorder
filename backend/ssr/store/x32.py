@@ -51,36 +51,75 @@ class X32Module(StateModule):
 
 
         self.messages = OrderedDict()
-        self.messages[f'/main/st/mix/fader'] = float
 
+        # Master Faders (Main bus, Mono bus)
+        self.messages[f'/main/st/mix/fader'] = float
+        self.messages[f'/main/st/config/name'] = str
+        self.messages[f'/main/st/config/color'] = int
+        self.messages[f'/main/m/mix/fader'] = float
+        self.messages[f'/main/m/config/name'] = str
+        self.messages[f'/main/m/config/color'] = int
+
+        # Regular Channels
         for channel in range(1, 33):
+            # Main bus send, mute
             self.messages[f'/ch/{channel:02}/mix/fader'] = float
             self.messages[f'/ch/{channel:02}/mix/on'] = int
+            # Mono bus send, mute
+            self.messages[f'/ch/{channel:02}/mix/mlevel'] = float
+            self.messages[f'/ch/{channel:02}/mix/mono'] = int
+            # Name and Color
             self.messages[f'/ch/{channel:02}/config/name'] = str
             self.messages[f'/ch/{channel:02}/config/color'] = int
 
+        # Aux Channels
         for aux in range(1, 9):
-            self.messages[f'/auxin/{aux:02}/config/name'] = str
+            # Main bus send, mute
             self.messages[f'/auxin/{aux:02}/mix/fader'] = float
+            self.messages[f'/auxin/{aux:02}/mix/on'] = float
 
+            self.messages[f'/auxin/{aux:02}/mix/mlevel'] = float
+            self.messages[f'/auxin/{aux:02}/mix/mono'] = float
+            # Name and Color
+            self.messages[f'/auxin/{aux:02}/config/name'] = str
+            self.messages[f'/auxin/{aux:02}/config/color'] = int
+
+        # FX Return Channels
         for fxrtn in range(1, 9):
-            self.messages[f'/fxrtn/{fxrtn:02}/config/name'] = str
+            # Main bus send, mute
             self.messages[f'/fxrtn/{fxrtn:02}/mix/fader'] = float
+            self.messages[f'/fxrtn/{fxrtn:02}/mix/on'] = float
+            # Mono bus send, mute
+            self.messages[f'/fxrtn/{fxrtn:02}/mix/mlevel'] = float
+            self.messages[f'/fxrtn/{fxrtn:02}/mix/mono'] = float
+            # Name and Color
+            self.messages[f'/fxrtn/{fxrtn:02}/config/name'] = str
+            self.messages[f'/fxrtn/{fxrtn:02}/config/color'] = int
 
+        # Buses
         for bus in range(1, 17):
-            self.messages[f'/bus/{bus:02}/config/name'] = str
+            # Bus main level, mute
             self.messages[f'/bus/{bus:02}/mix/fader'] = float
+            self.messages[f'/bus/{bus:02}/mix/on'] = float
+            # Name and Color
+            self.messages[f'/bus/{bus:02}/config/name'] = str
             self.messages[f'/bus/{bus:02}/config/color'] = int
 
+            # Stereo link (every other channel)
+            if bus % 2 == 1:
+                self.messages[f'/config/buslink/{bus}-{bus+1}'] = int
 
+            # Regular channels (level, mute)
             for channel in range(1, 33):
                 self.messages[f'/ch/{channel:02}/mix/{bus:02}/level'] = float
                 self.messages[f'/ch/{channel:02}/mix/{bus:02}/on'] = int
 
+            # Aux channels (level, mute)
             for aux in range(1, 9):
                 self.messages[f'/auxin/{aux:02}/mix/{bus:02}/level'] = float
                 self.messages[f'/auxin/{aux:02}/mix/{bus:02}/on'] = int
 
+            # Fx return channels (level, mute)
             for fxrtn in range(1, 9):
                 self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/level'] = float
                 self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/on'] = int
@@ -96,12 +135,11 @@ class X32Module(StateModule):
         Thread(target=self.full_sync).start()
 
     def full_sync(self):
-        log.info("Full Sync, clearing cache")
+        log.info(f'Full Sync, clearing cache ({len(self.messages)} Props)')
         self.cache = {}
 
         for prop in self.messages.keys():
             self.x32_request_value([prop])
-
             retry_count = 0
             while prop not in self.cache:
                 retry_count += 1

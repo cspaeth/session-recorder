@@ -2,7 +2,7 @@
 <template>
   <div >
     <span >{{name}}</span>
-    <q-slider @input="(val) => ocs_send([$props.target, val/1000])" :value="ocs_value"  :min="0" :max="1000"> </q-slider>
+    <q-slider @input="(val) => ocs_send([$props.target, val/1000])" :value="ocs_value" :min="0" :max="1000"> </q-slider>
   </div>
 
 </template>
