@@ -105,6 +105,14 @@ export default {
 
       return '/bus/' + pad(bus) + '/mix/fader'
     },
+    channel_mute_target: () => (bus, channel) => {
+      if (bus === 'main') {
+        return '/ch/' + pad(channel) + '/mix/on'
+      } else if (bus === 'mono') {
+        return '/ch/' + pad(channel) + '/mix/mono'
+      }
+      return '/ch/' + pad(channel) + '/mix/' + pad(bus) + '/on'
+    },
     channel_target: () => (bus, channel) => {
       if (bus === 'main') {
         return '/ch/' + pad(channel) + '/mix/fader'
