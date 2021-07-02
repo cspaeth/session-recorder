@@ -60,6 +60,13 @@ class X32Module(StateModule):
         self.messages[f'/main/m/config/name'] = str
         self.messages[f'/main/m/config/color'] = int
 
+        # mute groups
+        for mute_group in range(1, 7):
+            self.messages[f'/config/mute/{mute_group}'] = int
+
+        # Routing mode (play/record)
+        self.messages[f'/config/routing/routswitch'] = int
+
         # Regular Channels
         for channel in range(1, 33):
             # Main bus send, mute
