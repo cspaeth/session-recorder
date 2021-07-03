@@ -7,7 +7,7 @@ from django.conf import settings
 from pythonosc import dispatcher, osc_server
 from pythonosc import udp_client
 
-from ssr.store.util import StateModule, action
+from ssr.store.util import action, timing
 from ssr.utils import send_to_group
 
 log = logging.getLogger(__name__)
@@ -36,7 +36,8 @@ class X32UdpClient(udp_client.SimpleUDPClient):
         self._port = port
 
 
-class X32Module(StateModule):
+class X32Module:
+    name = "MIXER"
 
     def __init__(self):
         super().__init__()
@@ -44,11 +45,10 @@ class X32Module(StateModule):
         self.cache = {}
         log.info("Starting X32 connection")
         dispatch = dispatcher.Dispatcher()
-        dispatch.set_default_handler(self.dispatch_to_room)
+        dispatch.set_default_handler(self.x32_receive_value)
         server = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 10033), dispatch)
         # self.client = X32UdpClient("192.168.1.164", 10023, server)
         self.client = X32UdpClient("192.168.100.136", 10023, server)
-
 
         self.messages = OrderedDict()
 
@@ -141,12 +141,13 @@ class X32Module(StateModule):
         log.debug("Requesting %i properties" % len(self.messages))
         Thread(target=self.full_sync).start()
 
+    @timing
     def full_sync(self):
         log.info(f'Full Sync, clearing cache ({len(self.messages)} Props)')
         self.cache = {}
-
         for prop in self.messages.keys():
             self.x32_request_value([prop])
+
             retry_count = 0
             while prop not in self.cache:
                 retry_count += 1
@@ -154,6 +155,7 @@ class X32Module(StateModule):
                     log.warning(f'No value received for {prop}')
                     break
                 sleep(RETRY_SLEEP_LENGHT)
+
         log.info("... Sync completed")
         self.update_module_status()
 
@@ -163,32 +165,38 @@ class X32Module(StateModule):
             self.client.send_message("/xremote", [])
             sleep(7)
 
-
     @action
     def x32_send_value(self, message):
         path, value = message
-        log.debug("Sending value to x32 and group (%s): (%s) " % (path, value))
 
         if path in self.messages:
+            log.debug("Sending value to x32 and group (%s): (%s) " % (path, value))
             value = self.messages[path](value)
-
-        self.client.send_message(path, value)
-        send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', message)
+            self.client.send_message(path, value)
+            self.dispatch_to_group(path, value)
+        else:
+            log.warning(f"Unknown OSC path {path}={value}")
 
     @action
     def x32_request_value(self, message):
         log.debug("Sending value request to x32 (%s) " % message[0])
         self.client.send_message(message[0], None)
 
-    def dispatch_to_room(self, *a, **ab):
-        path, value = a
-
+    def x32_receive_value(self, *message, **ab):
+        path, value = message
         if path in self.messages:
             log.debug(f"Received from x32, send to group: ({path}={value})")
-            self.cache[path] = value
-            send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', a)
+            value = self.messages[path](value)
+            self.dispatch_to_group(path, value)
         else:
-            log.info(f'Unhandled OSC command from x32: {path}={value}')
+            log.debug(f'Unhandled OSC command from x32: {path}={value}')
+
+    def dispatch_to_group(self, path, value):
+        self.cache[path] = value
+        send_to_group(settings.MIXER_GROUP_NAME, 'osc_input', [path, value])
+
+    def update_module_status(self):
+        send_to_group(settings.MIXER_GROUP_NAME, 'send_update', self.name)
 
     def get_module_status(self):
         return {'osc': self.cache}

@@ -5,4 +5,4 @@ store = ApplicationStore()
 
 x32 = X32Module()
 
-store.register_module(x32, 'MIXER')
+store.register_module(x32)
