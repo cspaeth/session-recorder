@@ -3,7 +3,7 @@
   <q-page>
     <div class="row q-pa-sm">
       <div class="channel"
-           v-for="index in 16"
+           v-for="index in 32"
            :key="'ch' + index">
         <q-card flat bordered :class="channel_color(index)">
           <q-card-section >
@@ -14,17 +14,6 @@
         </q-card>
       </div>
 
-      <div class="channel"
-           v-for="index in 16"
-           :key="'ch' + index + 16">
-        <q-card flat bordered :class="channel_color(index + 16)">
-          <q-card-section>
-            <Fader :target="channel_target(bus, index + 16)"
-                   :name="(index + 16) + ' - ' + channel_name(index + 16)">
-            </Fader>
-          </q-card-section>
-        </q-card>
-      </div>
       <div class="channel"
            v-for="index in 8"
            :key="'auxin-' + index">
