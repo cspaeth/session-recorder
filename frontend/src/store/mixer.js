@@ -85,6 +85,17 @@ export default {
       const path = '/ch/' + pad(channel) + '/config/color'
       return classPrefix + state.osc[path]
     },
+
+    visible_channels: (state) => (channel) => {
+      const result = []
+      for (let i = 1; i < 32; i++) {
+        const path = '/ch/' + pad(channel) + '/config/color'
+        if (state.osc[path] < 9) {
+          result.push(i)
+        }
+      }
+    },
+
     auxin_color: (state) => (channel) => {
       const path = '/auxin/' + pad(channel) + '/config/color'
       return classPrefix + state.osc[path]

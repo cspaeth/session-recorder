@@ -1,6 +1,6 @@
 <template>
   <div id="q-app" >
-    <q-layout view="hHh lpR fFf">
+    <q-layout view="lHh lpR fFf">
 
       <q-header elevated :class="bus_color(bus)">
         <q-toolbar >
@@ -12,10 +12,12 @@
             </Fader>
 
           </q-toolbar-title>
+          <q-btn dense flat round icon="menu" @click="right = !right" />
+
         </q-toolbar>
       </q-header>
 
-      <q-drawer show-if-above v-model="left" side="left" elevated>
+      <q-drawer show-if-above v-model="left" side="left" elevated ref="leftDrawer">
         <q-list bordered separator class="bus-list">
           <q-item clickable v-ripple
                   :active="bus == 'main'"
@@ -27,7 +29,7 @@
                   :active="bus == 'mono'"
                   @click="go_to_bus('mono')"
                   :class="bus_color('mono')">
-            <q-item-section>{{ bus_name('mono') }}</q-item-section>
+            <q-item-section>{{ bus_name('mono') }}  </q-item-section>
           </q-item>
 
           <q-item clickable v-ripple
@@ -41,9 +43,26 @@
 
       </q-drawer>
 
-      <q-page-container>
+      <q-drawer  v-model="right" side="right" elevated >
+
+        <Button target="/config/routing/routswitch" title="Multitrack Playback"></Button>
+        <br>
+        <Button target="/config/mute/1" title="Talkback"></Button>
+        <Button target="/config/mute/2" title="DAW Playback"></Button>
+        <Button target="/config/mute/3" title="DAW Main"></Button>
+        <Button target="/config/mute/4" title="Input Channels"></Button>
+        <Button target="/config/mute/5" title="Mix Buses"></Button>
+        <br>
+        <q-btn @click="store_mix()" label="Store Mix"></q-btn>
+        <q-btn @click="load_mix()" label="Restore Mix"></q-btn>
+
+      </q-drawer>
+      <q-page-container >
 
         <Mixer :bus="bus"></Mixer>
+        <q-page-sticky position="bottom-right" :offset="[18, 18]">
+          <Button target="/config/mute/1" title="Talkback"></Button>
+        </q-page-sticky>
       </q-page-container>
 
     </q-layout>
@@ -57,27 +76,61 @@
 </template>
 <script>
 
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import Mixer from './components/Mixer'
 import Fader from './components/Fader'
+import Button from './components/Button'
 
 export default {
   data () {
     return {
-      bus: 'main',
-      left: null
+      bus: 'mono',
+      left: null,
+      right: false
     }
   },
   name: 'App',
-  components: { Mixer, Fader },
+  components: { Mixer, Fader, Button },
   computed: {
-    ...mapGetters(['connection_state', 'bus_name', 'bus_color', 'visible_buses', 'master_target'])
+    ...mapGetters(['connection_state', 'bus_name', 'bus_color', 'visible_buses', 'master_target', 'channel_target'])
   },
   methods: {
     go_to_bus (bus) {
-      this.left = false
+      if (this.$refs.leftDrawer.belowBreakpoint) {
+        this.left = false
+      }
       this.bus = bus
-    }
+    },
+
+    store_mix () {
+      // console.log(this.$q.localSt  orage.getItem('test'))
+
+      const mix = []
+      mix.push(this.$store.state.mixer.osc[this.master_target(this.bus)])
+
+      for (let ch = 1; ch <= 32; ch++) {
+        mix.push(this.$store.state.mixer.osc[this.channel_target(this.bus, ch)])
+      }
+
+      console.log(mix)
+      this.$q.localStorage.set('mix', mix)
+    },
+
+    load_mix () {
+      const mix = this.$q.localStorage.getItem('mix')
+      console.log(mix)
+
+      this.ocs_send([this.master_target(this.bus), mix.shift()])
+      //
+      for (let ch = 1; ch <= 32; ch++) {
+        this.ocs_send([this.channel_target(this.bus, ch), mix.shift()])
+      }
+
+      // console.log(mix)
+      // this.$q.localStorage.set('mix', mix)
+    },
+
+    ...mapActions(['ocs_send'])
   }
 }
 </script>
@@ -155,5 +208,8 @@ export default {
   .q-item--active {
     color: inherit;
     border-left: 5px solid indigo;
+  }
+  .q-inner-loading {
+    z-index: 10000;
   }
 </style>

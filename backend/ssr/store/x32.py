@@ -47,11 +47,21 @@ class X32Module:
         dispatch = dispatcher.Dispatcher()
         dispatch.set_default_handler(self.x32_receive_value)
         server = osc_server.ThreadingOSCUDPServer(("0.0.0.0", 10033), dispatch)
-        # self.client = X32UdpClient("192.168.1.164", 10023, server)
-        self.client = X32UdpClient("192.168.100.136", 10023, server)
+        self.client = X32UdpClient("192.168.1.164", 10023, server)
+        # self.client = X32UdpClient("192.168.100.136", 10023, server)
+        self.setup_osc()
 
+        log.info("Starting keep_alive thread")
+        Thread(target=self.keep_alive).start()
+
+        log.info("Starting osc event handler thread")
+        Thread(target=server.serve_forever).start()
+
+        log.debug("Requesting %i properties" % len(self.messages))
+        Thread(target=self.full_sync).start()
+
+    def setup_osc(self):
         self.messages = OrderedDict()
-
         # Master Faders (Main bus, Mono bus)
         self.messages[f'/main/st/mix/fader'] = float
         self.messages[f'/main/st/config/name'] = str
@@ -59,14 +69,11 @@ class X32Module:
         self.messages[f'/main/m/mix/fader'] = float
         self.messages[f'/main/m/config/name'] = str
         self.messages[f'/main/m/config/color'] = int
-
         # mute groups
         for mute_group in range(1, 7):
             self.messages[f'/config/mute/{mute_group}'] = int
-
         # Routing mode (play/record)
         self.messages[f'/config/routing/routswitch'] = int
-
         # Regular Channels
         for channel in range(1, 33):
             # Main bus send, mute
@@ -78,7 +85,6 @@ class X32Module:
             # Name and Color
             self.messages[f'/ch/{channel:02}/config/name'] = str
             self.messages[f'/ch/{channel:02}/config/color'] = int
-
         # Aux Channels
         for aux in range(1, 9):
             # Main bus send, mute
@@ -90,7 +96,6 @@ class X32Module:
             # Name and Color
             self.messages[f'/auxin/{aux:02}/config/name'] = str
             self.messages[f'/auxin/{aux:02}/config/color'] = int
-
         # FX Return Channels
         for fxrtn in range(1, 9):
             # Main bus send, mute
@@ -102,7 +107,6 @@ class X32Module:
             # Name and Color
             self.messages[f'/fxrtn/{fxrtn:02}/config/name'] = str
             self.messages[f'/fxrtn/{fxrtn:02}/config/color'] = int
-
         # Buses
         for bus in range(1, 17):
             # Bus main level, mute
@@ -114,7 +118,7 @@ class X32Module:
 
             # Stereo link (every other channel)
             if bus % 2 == 1:
-                self.messages[f'/config/buslink/{bus}-{bus+1}'] = int
+                self.messages[f'/config/buslink/{bus}-{bus + 1}'] = int
 
             # Regular channels (level, mute)
             for channel in range(1, 33):
@@ -130,16 +134,6 @@ class X32Module:
             for fxrtn in range(1, 9):
                 self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/level'] = float
                 self.messages[f'/fxrtn/{fxrtn:02}/mix/{bus:02}/on'] = int
-
-
-        log.info("Starting keep_alive thread")
-        Thread(target=self.keep_alive).start()
-
-        log.info("Starting osc event handler thread")
-        Thread(target=server.serve_forever).start()
-
-        log.debug("Requesting %i properties" % len(self.messages))
-        Thread(target=self.full_sync).start()
 
     @timing
     def full_sync(self):

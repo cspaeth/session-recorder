@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-toggle @input="(val) => ocs_send([$props.target, val ? 1 : 0])" :value="ocs_value"></q-toggle>
+    <q-btn  @click="ocs_send([$props.target, ocs_value ? 0 : 1])" color="red" :outline="!ocs_value">{{title}}</q-btn>
   </div>
 
 </template>
@@ -11,7 +11,7 @@ import { mapActions } from 'vuex'
 
 export default {
 
-  props: ['target'],
+  props: ['target', 'title'],
 
   computed: {
     ocs_value () {

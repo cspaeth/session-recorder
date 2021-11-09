@@ -77,7 +77,7 @@ export default {
   }
   @media screen and (max-width: 600px) {
     .channel {
-      flex-basis: 50%;
+      flex-basis: 100%;
     }
   }
 
